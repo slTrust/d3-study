@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<div id="app1">
+    <h1> element和 dataset 一一对应的叫做 update, element < dataset 操作enter 进行append 元素 然后进行操作</h1>
+    <p>1</p>
+    <p>2</p>
+    <p>3</p>
+</div>
+<hr>
+<div id="app2">
+    <h1> element和 dataset 一一对应的叫做 update, element > dataset 操作 exit 可以对元素进行各种操作</h1>
+    <p>1</p>
+    <p>2</p>
+    <p>3</p>
+</div>
+<script src="./d3.js"></script>
+<script>
+    app1()
+    function app1() {
+        var dataset = [3, 6, 9, 12, 15];
+
+        //选择body中的p元素
+        var p = d3.select("body #app1").selectAll("p");
+
+        //获取update部分
+        var update = p.data(dataset);
+
+        //获取enter部分
+        var enter = update.enter();
+
+        //update部分的处理：更新属性值
+        update.text(function (d) {
+            return "update " + d;
+        });
+
+        //enter部分的处理：添加元素后赋予属性值
+        enter.append("p")
+            .text(function (d) {
+                return "enter " + d;
+            });
+    }
+
+
+    app2()
+
+    function app2() {
+        var dataset = [3];
+
+        //选择body中的p元素
+        var p = d3.select("body").selectAll("p");
+
+        //获取update部分
+        var update = p.data(dataset);
+
+        //获取exit部分
+        var exit = update.exit();
+
+        //update部分的处理：更新属性值
+        update.text(function (d) {
+            return "update " + d;
+        });
+
+        //exit部分的处理：修改p元素的属性
+        exit.text(function (d) {
+            return "exit";
+        });
+
+        //exit部分的处理通常是删除元素
+        // exit.remove();
+    }
+</script>
+</body>
+</html>

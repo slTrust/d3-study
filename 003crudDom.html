@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        pre{
+            background: #333333;
+            padding:20px;
+            color:#fff;
+        }
+    </style>
+</head>
+<body>
+
+<p>Apple</p>
+<p>Pear</p>
+<p>Banana</p>
+<p class="remove">remove item</p>
+
+
+<pre>
+    // 在第三个元素后插入元素
+    d3.select('body').select('p:nth-child(3)').append('p').text('I is append element')
+    // 在第1个元素前插入元素
+    d3.select('body').insert('p','p:nth-child(1)').text('I is insert element')
+</pre>
+
+
+
+<script src="./d3.js"></script>
+<script>
+    // 在第三个元素后插入元素
+    d3.select('body').select('p:nth-child(3)').append('p').text('I is append element')
+    // 在第1个元素前插入元素
+    d3.select('body').insert('p','p:nth-child(1)').text('I is insert element')
+    // 删除最后一个元素
+    let removeP = d3.select("body .remove")
+        removeP.remove();
+</script>
+</body>
+</html>

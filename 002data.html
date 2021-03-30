@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        pre{
+            background: #333333;
+            padding:20px;
+            color:#fff;
+        }
+    </style>
+</head>
+<body>
+<h2>d3绑定数据</h2>
+<ul>
+    <li>datum()：绑定一个数据到选择集上</li>
+    <li>data()：绑定一个数组到选择集上，数组的各项值分别与选择集的各元素绑定</li>
+</ul>
+<p>Apple</p>
+<p>Pear</p>
+<p>Banana</p>
+<pre>
+    var str = "China";
+    var p = d3.select("body").selectAll("p");
+    p.datum(str);
+    p.text((data, i)=> "第 "+ i + " 个元素绑定的数据是 " + data);
+</pre>
+
+<div class="item"></div>
+<div class="item"></div>
+<div class="item"></div>
+<pre>
+const bindData = ()=>{
+    var dataset = ["A","B","C"];
+    d3.select("body")
+        .selectAll("div.item")
+        .data(dataset)
+        .text((d,i)=>i + d);
+}
+</pre>
+
+<script src="./d3.js"></script>
+<script>
+    const bindSameData = ()=>{
+        var str = "China";
+        var p = d3.select("body").selectAll("p");
+        p.datum(str);
+        p.text((data, i)=> "第 "+ i + " 个元素绑定的数据是 " + data);
+    }
+    bindSameData()
+
+    const bindData = ()=>{
+        var dataset = ["A","B","C"];
+        d3.select("body")
+            .selectAll("div.item")
+            .data(dataset)
+            .text((d,i)=>i + d);
+    }
+
+    bindData()
+
+</script>
+</body>
+</html>

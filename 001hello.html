@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        pre{
+            background: #333333;
+            padding:20px;
+            color:#fff;
+        }
+    </style>
+</head>
+<body>
+    <h2>use d3.select</h2>
+    <p>Hello</p>
+    <p>Hello</p>
+    <pre>
+        d3.select("body").selectAll('p').text('hello world')
+    </pre>
+
+    <h2>d3 style</h2>
+    <pre>
+        // 链式调用
+        let p = d3.select("body").selectAll('p');
+        p.style('color','red')
+        .style('font-size','20px')
+    </pre>
+<script src="./d3.js"></script>
+<script>
+    d3.select("body").selectAll('p').text('hello world')
+
+    // 链式调用
+    let p = d3.select("body").selectAll('p');
+    p.style('color','red')
+    .style('font-size','20px')
+</script>
+</body>
+</html>

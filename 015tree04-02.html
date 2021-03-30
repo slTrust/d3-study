@@ -1,0 +1,252 @@
+<!Doctype html>
+<head>
+    <meta charset="utf-8">
+    <title>树状图</title>
+    <style>
+        .node circle {
+            fill: #fff;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
+
+        .node {
+            font: 12px sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1.5px;
+        }
+    </style>
+</head>
+
+<body>
+<script src="./d3.js"></script>
+<!-- 纵向树状图 -->
+<script>
+    var width = 1200,
+        height = 500,
+        boxWidth = 65,
+        boxHeight = 40;
+    var root = {
+        "name": "中国",
+        "children": [{
+            "name": "浙江",
+            "children": [{
+                "name": "杭州"
+            },
+                {
+                    "name": "宁波"
+                },
+                {
+                    "name": "温州"
+                },
+                {
+                    "name": "绍兴"
+                }
+            ]
+        },
+
+            {
+                "name": "广西",
+                "children": [{
+                    "name": "桂林",
+                    "children": [{
+                        "name": "秀峰区"
+                    },
+                        {
+                            "name": "叠彩区"
+                        },
+                        {
+                            "name": "象山区"
+                        },
+                        {
+                            "name": "七星区"
+                        }
+                    ]
+                },
+                    {
+                        "name": "南宁"
+                    },
+                    {
+                        "name": "柳州"
+                    },
+                    {
+                        "name": "防城港"
+                    }
+                ]
+            },
+
+            {
+                "name": "黑龙江",
+                "children": [{
+                    "name": "哈尔滨"
+                },
+                    {
+                        "name": "齐齐哈尔"
+                    },
+                    {
+                        "name": "牡丹江"
+                    },
+                    {
+                        "name": "大庆"
+                    }
+                ]
+            },
+
+            {
+                "name": "新疆",
+                "children": [{
+                    "name": "乌鲁木齐"
+                },
+                    {
+                        "name": "克拉玛依"
+                    },
+                    {
+                        "name": "吐鲁番"
+                    },
+                    {
+                        "name": "哈密"
+                    }
+                ]
+            }
+        ]
+    };
+    var tree = d3.layout.tree()
+        .size([width, height - 200])
+        .separation(function (a, b) {
+            return (a.parent == b.parent ? 2 : 2);
+        });
+
+    // 用来拖拽图以及扩大缩放
+    var zoom = d3.behavior.zoom()
+        .scaleExtent([.1, 1])
+        .on('zoom', function () {
+            svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
+        });
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + 80) // 画布扩大，防止边缘文字被遮挡
+        .attr("height", height)
+        .append("g")
+        .call(zoom) // 相当于zoom（svg）
+        .attr("transform", "translate(40,40)"); // 将图整体下移，以防止顶部节点被遮挡
+
+
+    var nodes = tree.nodes(root);
+    var links = tree.links(nodes);
+
+    console.log(nodes);
+    console.log(links);
+
+    drawLine();
+    // 将曲线换为折线
+    function drawLine() {
+        var link = svg.selectAll("path.link")
+
+            // The function we are passing provides d3 with an id
+            // so that it can track when data is being added and removed.
+            // This is not necessary if the tree will only be drawn once
+            // as in the basic example.
+            .data(links);
+
+        // Add new links
+        link.enter().append("path")
+            .attr("class", "link");
+
+        // Remove any links we don't need anymore
+        // if part of the tree was collapsed
+        link.exit().remove();
+
+        // Update the links positions (old and new)
+        link.attr("d", elbow);
+
+        function elbow(d) {
+            let sourceX = d.source.x,
+                sourceY = d.source.y + boxHeight,
+                targetX = d.target.x,
+                targetY = d.target.y;
+            //代入
+            /*
+            中国》浙江 的折线
+            sourceX = 600
+            sourceY = 0 + 40
+            targetX = 150
+            targetY = 100
+
+            M600,40 V70 H150  V100
+            M 源头 sourceX,sourceY
+            V (100 - 40)/2 + 40 = 70  中国 和 浙江 中间的一半坐标
+            H targetX  150  目标的起点
+            V targetY  100
+             */
+            console.log('---------------')
+            console.log(d.source)
+            console.log(d.target)
+            console.log( "M" + sourceX + "," + sourceY +
+                "V" + ((targetY - sourceY) / 2 + sourceY) +
+                "H" + targetX +
+                "V" + targetY)
+            console.log('----------------')
+            return "M" + sourceX + "," + sourceY +
+                "V" + ((targetY - sourceY) / 2 + sourceY) +
+                "H" + targetX +
+                "V" + (targetY);
+
+        }
+    }
+
+    var node = svg.selectAll(".node")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", function (d) {
+            return "translate(" + d.x + "," + d.y + ")"; // edited
+        })
+
+    // 绘制矩形与文字
+    drawRect();
+
+    function drawRect() {
+        node.append("rect")
+            .attr('y', 0)
+            .attr('x', function (d) {
+                return d.depth !== 2 ? -(boxWidth / 2) : -(boxHeight / 2)
+            })
+            .attr('width', function (d) {
+                return d.depth !== 2 ? boxWidth : boxHeight;
+            })
+            .attr('height', function (d) {
+                return d.depth !== 2 ? boxHeight : boxWidth;
+            })
+            // 矩形背景色以及边框颜色宽度
+            .attr('fill', '#fff')
+            .attr('stroke', 'steelblue')
+            .attr('strokeWidth', '1px')
+            .on('click', function (evt) {
+                console.log(evt); // 显示所点击节点数据
+            });
+
+        // Draw the person's name and position it inside the box
+        node.append("text")
+            .attr('y', function (d) {
+                return d.depth !== 2 ? boxHeight / 2 + 5 : 0;
+            })
+            // .attr('rotate', function (d) { //显示竖直显示中文时rotate为0，英文-90
+            //     return 0;
+            // })
+            .attr('style', function (d) {
+                return d.depth !== 2 ? '' : "writing-mode: tb;letter-spacing:0px";
+            })
+            .attr("text-anchor", function (d) {
+                return d.depth !== 2 ? 'middle' : "start";
+            })
+            .text(function (d) {
+                return d.name;
+            });
+    }
+</script>
+</body>
+
+</html>

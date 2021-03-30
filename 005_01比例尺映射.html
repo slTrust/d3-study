@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        pre{
+            background: #333333;
+            padding:20px;
+            color:#fff;
+        }
+    </style>
+</head>
+<body>
+<h2>比例尺（Scale）</h2>
+<pre>
+    // 延续柱状图问题， 如果数据是这样的
+    // 我们不该画出来 2.5像素 / 2500 的rect 柱子，因为一是画布没那么大，二是太小了，你也看不出区别
+    var dataset_1 = [ 2.5 , 2.1 , 1.7 , 1.3 , 0.9 ];
+    var dataset_2 = [ 2500, 2100, 1700, 1300, 900 ];
+
+
+     // if 数据是这样的
+    var dataset = [1.2, 2.3, 0.9, 1.5, 3.3];
+    // 将 dataset 中最小的值，映射成 0；将最大的值，映射成 300。
+    var min = d3.min(dataset);
+    var max = d3.max(dataset);
+
+    // 初中数学 y = f(x)   ,y 是 x的一种映射 比如  y = 2x ,x=1则 y=2
+    var linear = d3.scale.linear()
+        .domain([min, max]) // 定义域 0.9-3.3
+        .range([0, 300]); // 实际的值域 0-300
+</pre>
+<h2>序数比例尺</h2>
+<pre>
+// 离散的映射关系
+var index = [0, 1, 2, 3, 4];
+var color = ["red", "blue", "green", "yellow", "black"];
+
+// red对应0， blue对应 1
+var ordinal = d3.scale.ordinal()
+    .domain(index)
+    .range(color);
+
+ordinal(0); //返回 red
+ordinal(2); //返回 green
+ordinal(4); //返回 black
+</pre>
+<script src="./d3.js"></script>
+<script>
+    // if 数据是这样的
+    var dataset = [1.2, 2.3, 0.9, 1.5, 3.3];
+    // 将 dataset 中最小的值，映射成 0；将最大的值，映射成 300。
+    var min = d3.min(dataset);
+    var max = d3.max(dataset);
+
+    // 初中数学 y = f(x)   ,y 是 x的一种映射 比如  y = 2x ,x=1则 y=2
+    var linear = d3.scale.linear()
+        .domain([min, max]) // 定义域 0.9-3.3
+        .range([0, 300]); // 实际的值域 0-300
+
+    console.log(linear(0.9));    //返回 0
+    console.log(linear(2.3));    //返回 175
+    console.log(linear(3.3));    //返回 300
+
+
+    // 离散的映射关系
+    var index = [0, 1, 2, 3, 4];
+    var color = ["red", "blue", "green", "yellow", "black"];
+
+    // red对应0， blue对应 1
+    var ordinal = d3.scale.ordinal()
+        .domain(index)
+        .range(color);
+
+    ordinal(0); //返回 red
+    ordinal(2); //返回 green
+    ordinal(4); //返回 black
+
+</script>
+</body>
+</html>

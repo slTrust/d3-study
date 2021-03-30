@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body {
+      text-align: center;
+    }
+
+    svg {
+      margin-top: 32px;
+      border: 1px solid #aaa;
+    }
+
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 1.5px;
+    }
+
+    .person rect {
+      fill: #fff;
+      stroke: steelblue;
+      stroke-width: 1px;
+    }
+
+    .person {
+      font: 14px sans-serif;
+      cursor: pointer;
+    }
+  </style>
+  <script src="./d3.js"></script>
+</head>
+
+<body>
+  <div id="viewContainer"></div>
+  <script>
+    const data = {
+      name: '中国',
+      id: '06ada7cd-3078-54bc-bb87-72e9d6f38abf',
+      _parents: [
+        {
+          name: '北京', id: 'a39bfa73-6617-5e8e-9470-d26b68787e52',
+          _parents: [
+            {
+               name: '一环', id: 'fc956046-a5c3-502f-b853-d669804d428f' ,
+               collapsed:true,
+               _parents: [
+                {
+                  name: '王府井', id: 'a39bfa73-6617-5e8e-9470-d26b63333'
+                }]
+            },
+            { name: '二环', id: 'fa5b0c07-9000-5475-a90e-b76af7693a57' },
+            { name: '三环', id: '667d2bb6-c26e-5881-9bdc-7ac9805f96c2' },
+            { name: '四环', id: '104039bb-d353-54a9-a4f2-09fda08b58bb' },
+            { name: '五环', id: '06c7b0cb-cd21-53be-81bd-9b088af96904' }
+          ]
+        },
+        {
+          name: '上海', id: '522266d2-f01a-5ec0-9977-622e4cb054c0',
+          _parents: [
+            { name: '内环(内)', id: 'da430aa2-f438-51ed-ae47-2d9f76f8d831' },
+            { name: '中环', id: 'd384197e-2e1e-5fb2-987b-d90a5cdc3c15' },
+            { name: '外环', id: 'ea01728f-e542-53a6-acd0-6f43805c31a3' },
+            { name: '外一环', id: '4f910be4-b827-50be-b783-6ba3249f6ebc' },
+            { name: '外二环', id: 'bfd1612c-b90d-5975-824c-49ecf62b3d5f' }
+          ]
+        }
+      ]
+    }
+    const width = 1200
+    const height = 500
+    // 内容宽度
+    const boxWidth = 130
+    const boxHeight = 40
+
+    
+    let zoom = d3.behavior
+      .zoom()
+      .scaleExtent([0.1, 1])
+      .on('zoom', function () {
+        svg.attr('transform', 'translate(' + d3.event.translate + ') scale(' + d3.event.scale + ')')
+      })
+
+    let svg = d3
+      .select('#viewContainer')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height)
+      .call(zoom)
+      .append('g')
+      .attr('transform', 'translate(0)')
+
+    // Compute the layout.
+    let tree = d3.layout
+      .tree()
+      .size([width - 500, height - 220])
+      .separation(function () {
+        return 0.5
+      })
+      .children(function (person) {
+        console.log('person-----')
+        console.log(person)
+        console.log('person-----')
+        if (person.collapsed) {
+          console.log(' person.collapsed---')
+          console.log( person.collapsed)
+          console.log(' person.collapsed----')
+          return
+        } else {
+          return person._parents
+        }
+      }),
+      nodes = tree.nodes(data),
+      links = tree.links(nodes)
+
+    // Update nodes
+    var node = svg
+      .selectAll('g.person')
+      // The function we are passing provides d3 with an id
+      // so that it can track when data is being added and removed.
+      // This is not necessary if the tree will only be drawn once
+      // as in the basic example.
+      .data(nodes, function (person) {
+        return person.id
+      })
+
+    // Add any new nodes
+    var nodeEnter = node
+      .enter()
+      .append('g')
+      .attr('class', 'person')
+    // .on('click', togglePerson);
+
+    // Draw the rectangle person boxes
+    nodeEnter
+      .append('rect')
+      .attr('y', 0)
+      .attr('x', function (d) {
+        // depth 代表层级 
+        // depth = 0 代表 根节点 第一层
+        // depth = 1 代表 根节点 第二层
+        console.log(d)
+        return d.depth !== 2 ? -(boxWidth / 2) : -(boxHeight / 2)
+      })
+      .attr('width', function (d) {
+        return d.depth !== 2 ? boxWidth : boxHeight
+      })
+      .attr('height', function (d) {
+        return d.depth !== 2 ? boxHeight : boxWidth
+      })
+      .on('click', function (evt) {
+        console.log('click node')
+        console.log(evt)
+      })
+
+    // Draw the person's name and position it inside the box
+    nodeEnter
+      .append('text')
+      .attr('y', function (d) {
+        return d.depth !== 2 ? boxHeight / 2 + 5 : 0
+      })
+      .attr('rotate', function (d) {
+        //显示竖直显示中文时rotate为0，英文-90
+        return 0
+      })
+      .attr('style', function (d) {
+        return d.depth !== 2 ? '' : 'writing-mode: tb;letter-spacing:0px'
+      })
+      .attr('text-anchor', function (d) {
+        return d.depth !== 2 ? 'middle' : 'start'
+      })
+      .text(function (d) {
+        return d.name
+      })
+
+    // Update the position of both old and new nodes
+    node.attr('transform', function (d) {
+      return 'translate(' + d.x + ',' + d.y + ')'
+    })
+
+    // Remove nodes we aren't showing anymore
+    node.exit().remove()
+
+    // Update links
+    var link = svg
+      .selectAll('path.link')
+      // The function we are passing provides d3 with an id
+      // so that it can track when data is being added and removed.
+      // This is not necessary if the tree will only be drawn once
+      // as in the basic example.
+      .data(links, function (d) {
+        return d.target.id
+      })
+
+    // Add new links
+    link
+      .enter()
+      .append('path')
+      .attr('class', 'link')
+    // Remove any links we don't need anymore
+    // if part of the tree was collapsed
+    link.exit().remove()
+
+    // Update the links positions (old and new)
+    link.attr('d', elbow)
+
+    function elbow(d) {
+      let sourceX = d.source.x,
+        sourceY = d.source.y + boxHeight,
+        targetX = d.target.x,
+        targetY = d.target.y
+
+      return ('M' + sourceX + ',' + sourceY + 'V' + ((targetY - sourceY) / 2 + sourceY) + 'H' + targetX + 'V' + targetY)
+    }
+  </script>
+</body>
+
+</html>
