@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>testD3_chp14_1.html</title>
+	</script>
+  </head>
+  
+  <body>
+    <svg width="960" height="600" style="border: 1px solid red;"></svg>
+    <script src="./d3.min.js"></script>
+    <script>
+      /*
+      d3 v5代码
+      https://github.com/mp2930696631/d3.js-demo/tree/master/d3.js-demo
+      */
+
+    	var marge = {top:60,bottom:60,left:60,right:60}
+    	var svg = d3.select("svg")
+    	var width = svg.attr("width")
+    	var height = svg.attr("height")
+    	var g = svg.append("g")
+    		.attr("transform","translate("+marge.top+","+marge.left+")");
+    		
+    	//准备数据
+    	var nodes = [
+    		{name:"上海爱数"},
+    		{name:"AnyShare"},
+    		{name:"AnyData"},
+        {name:"AnyRobot"},
+        {name:"AnyBackUp"},
+
+        //1
+        {name:"AnyShare-竞品1"},
+        {name:"AnyShare-竞品2"},
+        {name:"AnyShare-竞品3"},
+        {name:"AnyShare-竞品4"},
+        {name:"AnyShare-竞品5"},
+        //2
+        {name:"AnyData-竞品1"},
+        {name:"AnyData-竞品2"},
+        {name:"AnyData-竞品3"},
+        {name:"AnyData-竞品4"},
+        {name:"AnyData-竞品5"},
+        //3
+        {name:"AnyRobot-竞品1"},
+        {name:"AnyRobot-竞品2"},
+        {name:"AnyRobot-竞品3"},
+        {name:"AnyRobot-竞品4"},
+        {name:"AnyRobot-竞品5"},
+        //4
+        {name:"AnyBackUp-竞品1"},
+        {name:"AnyBackUp-竞品2"},
+        {name:"AnyBackUp-竞品3"},
+        {name:"AnyBackUp-竞品4"},
+        {name:"AnyBackUp-竞品5"},
+    	];
+    	var edges = [
+    		{source:0,target:0,relation:"",value:1},
+    		{source:1,target:0,relation:"",value:1},
+    		{source:2,target:0,relation:"",value:1},
+        {source:3,target:0,relation:"",value:1},
+    		{source:4,target:0,relation:"",value:1},
+
+        {source:5,target:1,relation:"",value:1},
+    		{source:6,target:1,relation:"",value:1},
+    		{source:7,target:1,relation:"",value:1},
+        {source:8,target:1,relation:"",value:1},
+    		{source:9,target:1,relation:"",value:1},
+
+        {source:10,target:2,relation:"",value:1},
+    		{source:11,target:2,relation:"",value:1},
+    		{source:12,target:2,relation:"",value:1},
+        {source:13,target:2,relation:"",value:1},
+    		{source:14,target:2,relation:"",value:1},
+
+        {source:15,target:3,relation:"",value:1},
+    		{source:16,target:3,relation:"",value:1},
+    		{source:17,target:3,relation:"",value:1},
+        {source:18,target:3,relation:"",value:1},
+    		{source:19,target:3,relation:"",value:1},
+
+        {source:20,target:4,relation:"",value:1},
+    		{source:21,target:4,relation:"",value:1},
+    		{source:22,target:4,relation:"",value:1},
+        {source:23,target:4,relation:"",value:1},
+    		{source:24,target:4,relation:"",value:1}
+    	];
+    	//设置一个color的颜色比例尺，为了让不同的扇形呈现不同的颜色
+    	var colorScale = d3.scaleOrdinal()
+    		.domain(d3.range(nodes.length))
+    		.range(d3.schemeCategory10);
+    	
+        var forceCollide = d3.forceCollide()
+      .radius(function(d){return d.radius;})
+      .iterations(2)
+      .strength(0.95);
+    	//新建一个力导向图
+    	var forceSimulation = d3.forceSimulation()
+    		.force("link",d3.forceLink())
+    		.force("charge",d3.forceManyBody())
+        	// .force("center",d3.forceCenter())
+         // 碰撞力 防止节点重叠
+        // .force('collide',d3.forceCollide().radius(10).iterations(4));
+          // 整个实例中心
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        // 引力
+        .force('charge', d3.forceManyBody().strength(-20))
+        // 碰撞力 防止节点重叠
+        .force('collide',d3.forceCollide().radius(60).iterations(2));
+        
+    	//初始化力导向图，也就是传入数据
+    	//生成节点数据
+    	forceSimulation.nodes(nodes)
+    		.on("tick",ticked);//这个函数很重要，后面给出具体实现和说明
+    	//生成边数据
+    	forceSimulation.force("link")
+    		.links(edges)
+    		.distance(function(d){//每一边的长度
+    			return d.value*100;
+    		})    	
+    	//设置图形的中心位置	
+    	forceSimulation.force("center")
+    		.x(width/2 - 150)
+    		.y(height/2);
+    	//在浏览器的控制台输出
+    	console.log(nodes);
+    	console.log(edges);
+    	
+    	//有了节点和边的数据后，我们开始绘制
+    	//绘制边
+    	var links = g.append("g")
+    		.selectAll("line")
+    		.data(edges)
+    		.enter()
+    		.append("line")
+    		.attr("stroke",function(d,i){
+    			return colorScale(i);
+    		})
+    		.attr("stroke-width",1);
+    	var linksText = g.append("g")
+    		.selectAll("text")
+    		.data(edges)
+    		.enter()
+    		.append("text")
+    		.text(function(d){
+    			return d.relation;
+    		})
+    	
+    	//绘制节点
+    	//老规矩，先为节点和节点上的文字分组
+    	var gs = g.selectAll(".circleText")
+    		.data(nodes)
+    		.enter()
+    		.append("g")
+    		.attr("transform",function(d,i){
+    			var cirX = d.x;
+    			var cirY = d.y;
+    			return "translate("+cirX+","+cirY+")";
+    		})
+    		.call(d3.drag()
+    			.on("start",started)
+    			.on("drag",dragged)
+    			.on("end",ended)
+    		);
+    		
+    	//绘制节点
+    	gs.append("circle")
+    		.attr("r",(d)=>{
+          if(d.index===0){
+            return 40;
+          }else if(d.index <5){
+            return 20;
+          }
+          console.log(d)
+          return 10
+        })
+    		.attr("fill",function(d,i){
+    			return colorScale(i);
+    		})
+    	//文字
+    	gs.append("text")
+    		.attr("x",-10)
+    		.attr("y",-20)
+    		.attr("dy",10)
+    		.text(function(d){
+    			return d.name;
+    		})
+    	
+    	function ticked(){
+    		links
+    			.attr("x1",function(d){return d.source.x;})
+    			.attr("y1",function(d){return d.source.y;})
+    			.attr("x2",function(d){return d.target.x;})
+    			.attr("y2",function(d){return d.target.y;});
+    			
+    		linksText
+    			.attr("x",function(d){
+    			return (d.source.x+d.target.x)/2;
+    		})
+    		.attr("y",function(d){
+    			return (d.source.y+d.target.y)/2;
+    		});
+    			
+    		gs
+    			.attr("transform",function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+    	}
+    	function started(d){
+    		if(!d3.event.active){
+    			forceSimulation.alphaTarget(0.8).restart();
+    		}
+    		d.fx = d.x;
+    		d.fy = d.y;
+    	}
+    	function dragged(d){
+    		d.fx = d3.event.x;
+    		d.fy = d3.event.y;
+    	}
+    	function ended(d){
+    		if(!d3.event.active){
+    			forceSimulation.alphaTarget(0);
+    		}
+    		d.fx = null;
+    		d.fy = null;
+    	}
+
+  
+    </script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <svg width="300" height="300"> 
+  </svg> 
+  <script src="./d3.min.js"></script>
+  <script>
+    // https://vimsky.com/examples/usage/d3-js-arc-function.html
+     var svg = d3.select("svg") 
+            .append("g") 
+            .attr("transform", "translate(150,50)"); 
+  
+        // Function is used 
+        var arc = d3.arc() 
+            .innerRadius(40) 
+            .outerRadius(45) 
+            .startAngle(100) 
+            .endAngle(2 * 180); 
+  
+        svg.append("path") 
+            .attr("class", "arc") 
+            .attr("d", arc) 
+            .attr("fill","green"); 
+  </script>
+</body>
+</html>

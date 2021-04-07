@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    #container {
+      background-color: lightgreen;
+      border: 1px solid green;
+      width: 100px;
+      height: 100px;
+    }
+
+    @media screen and (max-width: 1200px) {
+      #container {
+        border: 1px solid red;
+        width: 100px;
+        height: 100px;
+      }
+    }
+
+    @media screen and (max-width: 900px) {
+      #container {
+        border: 1px solid red;
+        width: 100px;
+        height: 100px;
+      }
+    }
+
+    @media screen and (max-width: 700px) {
+      #container {
+        background-color: lightblue;
+        border: 1px solid blue;
+        width: 200px;
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+  </div>
+  <button id="btn">release</button>
+  <script src="./d3.min.js"></script>
+  <!-- resize 截流防抖 -->
+  <script src="./lodash.js"></script>
+  <script>
+
+    class D3_Score {
+      svgId;
+      container;
+      options;
+      onResizeCallBack;
+      constructor(selector, options) {
+        this.container = selector;
+        this.options = options || {};
+        this.init()
+      }
+      init() {
+        let delay = this.options.delay || 50;
+        this.onResizeCallBack = debounce(()=>{
+          this.render()
+        },delay)
+        this.render()
+      }
+      release() {
+        window.removeEventListener('resize', this.onResizeCallBack)
+        document.querySelector(this.container).innerHTML = '';
+      }
+      bindEvents() {
+        window.addEventListener('resize', this.onResizeCallBack)
+      }
+      computedRadius() {
+        let { width, height } = this.getContainerInfo(this.container);
+        let padding = this.options.padding || 5;
+        let radius = d3.min([height, width]) / 2 - padding;
+
+        let arcWidth = this.options.argWidth || 5;
+        let outerRadius = this.options.outerRadius || radius;
+        let innerRadius = this.options.innerRadius || (outerRadius - arcWidth);
+        let color = this.options.color || '#83CFC9';
+        let bgArgColor = this.options.color || null;
+        let res = {
+          width, height,
+          padding,
+          innerRadius,
+          outerRadius,
+          color,
+          bgArgColor
+        }
+        return res
+      }
+      render() {
+        this.release();
+        this.bindEvents();
+        let { width, height, padding, innerRadius, outerRadius, color, bgArgColor } = this.computedRadius();
+
+        var svg = d3.select(this.container).append('svg')
+          .attr('height', height)
+          .attr('width', width)
+          .append("g")
+          .attr("transform", `translate(${width / 2},${height / 2})`);
+
+        // drawBackgroundArc
+        if (bgArgColor) {
+          drawArc(svg, 100, color)
+        } else {
+          drawArc(svg, 100, color).style('opacity', '0.2')
+        }
+
+        drawArc(svg, 85, color)
+        drawText(svg, 85, color)
+
+        function setArc(score) {
+          var linear = d3.scaleLinear()
+            .domain([0, 100]) // 定义域 score 0-100
+            .range([0, 360]); // 实际的值域 0-360°
+
+          return d3.arc()
+            .innerRadius(innerRadius)
+            .outerRadius(outerRadius)
+            .startAngle(180 * (Math.PI / 180))//从degs转换为弧度
+            .endAngle((180 + linear(score)) * (Math.PI / 180))// just radians 
+        }
+
+        function drawArc(svg, arcScore, color) {
+          return svg.append("path")
+            .attr("class", "arc")
+            .attr("d", setArc(arcScore))
+            .attr("fill", color)
+        }
+
+        function drawText(svg, score) {
+          svg.append("text")
+            .attr('x', 0)
+            .attr('y', 12)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '30px')
+            .style('font-weight', 'bold')
+            .attr('fill', color)
+            .text(score)
+        }
+
+      }
+      getContainerInfo(selector) {
+        let container = document.querySelector(selector);
+        return container.getBoundingClientRect();
+      }
+    }
+
+    let score = new D3_Score('#container', {
+      padding: 20,
+      innerRadius:45,
+      outerRadius:50
+    })
+    btn.addEventListener('click', () => {
+      score.release()
+    })
+
+
+    function debounce(fn, delay) {
+      var ctx;
+      var args;
+      var timer = null;
+
+      var later = function () {
+        fn.apply(ctx, args);
+        // 当事件真正执行后，清空定时器
+        timer = null;
+      };
+
+      return function () {
+        ctx = this;
+        args = arguments;
+        // 当持续触发事件时，若发现事件触发的定时器已设置时，则清除之前的定时器
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+
+        // 重新设置事件触发的定时器
+        timer = setTimeout(later, delay);
+      };
+    }
+
+  </script>
+</body>
+
+</html>

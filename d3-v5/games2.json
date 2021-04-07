@@ -1,0 +1,30 @@
+{
+  "name": "",
+  "children": [
+      {
+          "name": "RPG",
+          "children": [
+              {
+                  "name": "The Elder Scroll",
+                  "popularity": 500
+              },
+              {
+                  "name": "Witcher",
+                  "popularity": 500
+              }
+          ]
+      },
+      {
+          "name": "Shooter Games",
+          "children": [
+            
+          ]
+      },
+      {
+          "name": "Card game",
+          "children": [
+             
+          ]
+      }
+  ]
+}

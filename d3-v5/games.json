@@ -1,0 +1,94 @@
+{
+    "name": "Games",
+    "children": [
+        {
+            "name": "RPG",
+            "children": [
+                {
+                    "name": "The Elder Scroll",
+                    "popularity": 500
+                },
+                {
+                    "name": "Witcher",
+                    "popularity": 500
+                },
+                {
+                    "name": "Final Fantasy",
+                    "popularity": 500
+                },
+                {
+                    "name": "Pokémon",
+                    "popularity": 500
+                }
+            ]
+        },
+        {
+            "name": "Shooter Games",
+            "children": [
+                {
+                    "name": "Contra",
+                    "popularity": 500
+                },
+                {
+                    "name": "FPS",
+                    "children": [
+                        {
+                            "name": "R6: Siege",
+                            "popularity": 500
+                        },
+                        {
+                            "name": "Overwatch",
+                            "popularity": 500
+                        },
+                        {
+                            "name": "CS:GO",
+                            "popularity": 652
+                        }
+                    ]
+                },
+                {
+                    "name": "TPS",
+                    "children": [
+                        {
+                            "name": "PUBG",
+                            "popularity": 500
+                        },
+                        {
+                            "name": "和平精英",
+                            "popularity": 500
+                        },
+                        {
+                            "name": "小米枪战",
+                            "popularity": 652
+                        },
+                        {
+                            "name": "Splinter Cell",
+                            "popularity": 652
+                        },
+                        {
+                            "name": "Battlefield",
+                            "popularity": 652
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Card game",
+            "children": [
+                {
+                    "name": "MTG",
+                    "popularity": 500
+                },
+                {
+                    "name": "Hearthstone",
+                    "popularity": 1000
+                },
+                {
+                    "name": "Yu-Gi-Oh",
+                    "popularity": 500
+                }
+            ]
+        }
+    ]
+}

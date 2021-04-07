@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    *{
+      margin:0;
+      padding:0;
+    }
+    .node circle {
+      cursor: pointer;
+      fill: #fff;
+      stroke: steelblue;
+      stroke-width: 1.5px;
+    }
+
+      .node text {
+        font-size: 11px;
+      }
+
+      path.link {
+        fill: none;
+        stroke: #ccc;
+        stroke-width: 1.5px;
+      }
+  </style>
+  <script src="./d3.min.js"></script>
+</head>
+<body>
+  
+<script>
+var treeData = {
+  name: "",
+  children: [
+    {
+      name: "Level 2: A",
+      children: [{ name: "Son of A" }, { name: "Daughter of A" }]
+    },
+    { name: "Level 2: B" }
+  ]
+};
+
+// 设置图表的宽高和Margin
+var margin = { top: 20, right: 90, bottom: 30, left: 90 },
+  width = 960 - margin.left - margin.right,
+  height = 500 - margin.top - margin.bottom;
+
+var svg = d3
+  .select("body")
+  // 在页面的body里添加svg对象
+  .append("svg")
+  .style('border','1px solid red')
+  // 设置svg宽高
+  .attr("width", width + margin.right + margin.left)
+  .attr("height", height + margin.top + margin.bottom)
+  // 在svg里添加group元素
+  .append("g")
+  .attr('class','g-item')
+  // 将group放置在左上方
+  .attr("transform", "translate(" + (margin.left+width/2) + "," + margin.top + ")");
+
+var i = 0,
+  duration = 750,
+  root;
+
+// 定义Tree层级，并设置宽高
+var treemap = d3.tree().size([height, width/2]);
+
+// 计算父节点、字节点、高度和深度（parent, children, height, depth）
+root = d3.hierarchy(treeData, function(d) {
+  return d.children;
+});
+// 设置第一个元素的初始位置
+root.x0 = height / 2;
+root.y0 = 0;
+
+// 第二层以上元素收起
+root.children.forEach(collapse);
+
+// 更新节点状态
+update(root);
+
+// collapse方法，用于切换子节点的展开和收起状态
+function collapse(d) {
+  if (d.children) {
+    d._children = d.children;
+    d._children.forEach(collapse);
+    d.children = null;
+  }
+}
+
+function update(source) {
+  // 设置节点的x、y位置信息
+  var treeData = treemap(root);
+
+  // 计算新的Tree层级
+  var nodes = treeData.descendants(),
+    links = treeData.descendants().slice(1);
+
+  // 设置每个同级节点间的y间距为180
+  nodes.forEach(function(d) {
+    d.y = d.depth * 180;
+  });
+
+  // ****************** 节点部分操作 ***************************
+
+  // 给节点添加id，用于选择集索引
+  var node = svg.selectAll("g.node") // 此时选中元素还不存在，通过绑定 data载入数据，enter创建元素
+    .data(nodes, function(d) {
+      return d.id || (d.id = ++i);
+    });
+
+  // 添加enter操作，添加类名为node的group元素
+  var nodeEnter = node
+    .enter()
+    .append("g")
+    .attr("class", "node")
+    // 默认位置为当前父节点的位置
+    .attr("transform", function(d) {
+      return "translate(" + source.y0 + "," + source.x0 + ")";
+    })
+    // 给每个新加的节点绑定click事件
+    .on("click", click);
+
+  // 给每个新加的group元素添加cycle元素
+  nodeEnter
+    .append("circle")
+    .attr("class", "node")
+    .attr("r", 1e-6) // 让半径近似为0
+    // 如果元素有子节点，且为收起状态，则填充浅蓝色
+    .style("fill", function(d) {
+      return d._children ? "lightsteelblue" : "#fff";
+    });
+
+  // 给每个新加的group元素添加文字说明
+  nodeEnter
+    .append("text")
+    .attr("dy", ".35em")
+    .attr("x", function(d) {
+      return d.children || d._children ? -13 : 13;
+    })
+    .attr("text-anchor", function(d) {
+      return d.children || d._children ? "end" : "start";
+    })
+    .text(function(d) {
+      return d.data.name;
+    });
+
+  // 获取update集
+  var nodeUpdate = nodeEnter.merge(node);
+
+  // 设置节点的位置变化，添加过渡动画效果
+  nodeUpdate
+    .transition()
+    .duration(duration)
+    .attr("transform", function(d) {
+      return "translate(" + d.y + "," + d.x + ")";
+    });
+
+  // 更新节点的属性和样式
+  nodeUpdate
+    .select("circle.node")
+    .attr("r", 10)
+    .style("fill", function(d) {
+      return d._children ? "lightsteelblue" : "#fff";
+    })
+    .attr("cursor", "pointer");
+
+  // 获取exit操作
+  var nodeExit = node
+    .exit()
+    // 添加过渡动画
+    .transition()
+    .duration(duration)
+    .attr("transform", function(d) {
+      return "translate(" + source.y + "," + source.x + ")";
+    })
+    // 移除元素
+    .remove();
+
+  // exit集中节点的cycle元素尺寸变为0
+  nodeExit.select("circle").attr("r", 1e-6);
+
+  // exit集中节点的text元素可见度降为0
+  nodeExit.select("text").style("fill-opacity", 1e-6);
+
+  // ****************** 连接线部分操作 ***************************
+
+  // 更新数据
+  var link = svg.selectAll("path.link").data(links, function(d) {
+    return d.id;
+  });
+
+  // 添加enter操作，添加类名为link的path元素
+  var linkEnter = link
+    .enter()
+    .insert("path", "g-item")
+    .attr("class", "link")
+    // 默认位置为当前父节点的位置
+    .attr("d", function(d) {
+      var o = { x: source.x0, y: source.y0 };
+      return diagonal(o, o);
+    });
+
+  // 获取update集
+  var linkUpdate = linkEnter.merge(link);
+
+  // 更新添加过渡动画
+  linkUpdate
+    .transition()
+    .duration(duration)
+    .attr("d", function(d) {
+      return diagonal(d, d.parent);
+    });
+
+  // 获取exit集
+  var linkExit = link
+    .exit()
+    .transition()
+    .duration(duration)
+    .attr("d", function(d) {
+      var o = { x: source.x, y: source.y };
+      return diagonal(o, o);
+    })
+    // 移除link
+    .remove();
+
+  // 为动画过渡保存旧的位置
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+
+  // 添加贝塞尔曲线的path，衔接与父节点和子节点间
+  // function diagonal(s, d) {
+  //   path = `M ${s.y} ${s.x}
+  //           C ${(s.y + d.y) / 2} ${s.x},
+  //             ${(s.y + d.y) / 2} ${d.x},
+  //             ${d.y} ${d.x}`;
+
+  //   return path;
+  // }
+
+  function diagonal(source, target) {
+          let s = source, d = target;
+          return `M ${s.y} ${s.x}
+                  L ${(s.y + d.y) / 2} ${s.x},
+                  L ${(s.y + d.y) / 2} ${d.x},
+                  ${d.y} ${d.x}`
+        }
+
+  // 当点击时，切换children，同时用_children来保存原子节点信息
+  function click(d) {
+    if (d.children) {
+      d._children = d.children;
+      d.children = null;
+    } else {
+      d.children = d._children;
+      d._children = null;
+    }
+    update(d);
+  }
+}
+  </script>
+</body>
+</html>

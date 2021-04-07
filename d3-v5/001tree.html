@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    *{
+      margin:0;
+      padding:0;
+    }
+  </style>
+  <script src="./d3.min.js"></script>
+</head>
+<body>
+  <svg id="mainsvg" class="svgs" style="display: block; margin: auto;border:1px solid red"></svg>
+  
+  <script>
+    let root;
+    const scrollBarWidth = 16
+    const width = window.innerWidth - scrollBarWidth;
+    const height = window.innerHeight - scrollBarWidth;
+    const margin = { left:100, top:100, right:100,bottom:100}
+    const svg = d3.select('#mainsvg').attr('width',width).attr('height',height)
+    
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+   
+    const g = svg.append('g') // g 点 后续节点依赖的 相对起始点
+      .attr('transform',`translate(${margin.left},${margin.top})`)
+    
+    const gL = g.append('g')
+    .attr('class','gL')
+    .attr('transform',`translate(${innerWidth/2},${0})`)
+    
+    const gR = g.append('g')
+    .attr('class','gR')
+    .attr('transform',`translate(${innerWidth/2},${0})`)
+    
+
+    d3.json('./games2.json').then( data => {
+      root = d3.hierarchy(data);// 层级化数据
+      root = d3.tree().size([innerHeight, innerWidth/2])(root);// 定义 tree 图的大小
+      bakChildrenNode(root,'rside')
+      render(root,true)
+
+      let data2 = JSON.parse(JSON.stringify(data))
+      root2 = d3.hierarchy(data2);// 层级化数据
+      bakChildrenNode(root2,'lside')
+    
+      root2 = d3.tree().size([innerHeight, innerWidth/2])(root);// 
+      render(root2,false)
+    });
+
+    function bakChildrenNode(root,preId){
+      root.descendants().forEach(d => {
+          d._children = d.children;//添加_children属性，用于实现点击收缩及展开功能
+          d.id = preId + Math.random();//绑定唯一标识ID
+        });
+    }
+
+    const render = function(root,isRight){
+        let data = root;
+        let aspect = isRight?1:-1;
+        let g = isRight?gR:gL;
+        const nodes = root.descendants();
+        nodes.forEach(d => {
+          // 如果是 反方向 改变 y 正负
+          d.y = aspect *d.y
+          d.x = d.x
+        });
+        const links = root.links()
+
+        drawLine()
+        drawNodeTitleBorderRect()
+        drawNodeCircle();
+        drawNodeName();
+
+
+       function drawNodeName(){
+          g.selectAll('text').data(root.descendants()).join('text')
+          .transition()
+        .duration(1000)
+          .attr("text-anchor", isRight ? "start" : "end")
+          .attr('x', d => aspect*(d.children ? 10 : 10) + d.y)
+          .attr('y', d => d.x + 5)
+          .text(d => d.data.name)
+       }
+       function drawNodeTitleBorderRect(){
+        g.selectAll('rect').data(root.descendants().filter(d=>d.height==0)).join('rect')
+        .transition()
+        .duration(1000)
+        .attr("stroke", "black")
+        .attr("fill", "none")
+        .attr('x', d => d.y + (isRight?0:-100))
+        .attr('y', d => d.x -25)
+        .attr('rx', 5)
+        .attr('ry', 5)
+        .attr('width', 100)
+        .attr('height', 50)
+      }
+
+      function drawNodeCircle(){
+          g.selectAll('circle').data(root.descendants().filter(d=>d.height!=0)).join('circle')
+          .transition()
+        .duration(1000)
+          .attr("stroke-width", 3)
+          .attr("fill", '#f00')
+          // .attr("fill", fill) // 根据节点信息 选择对应颜色
+          .attr('cx', d => d.y)
+          .attr('cy', d => d.x)
+          .attr("r", 6)
+          // .on("click", (d) => {
+          //     clickNode(d, isRight);//根节点不执行点击事件
+          // });
+      }
+
+      function clickNode(d, direction) {
+          console.log('d click')
+          if(d.depth===0) return;
+          if (!d._children && !d.children) {//无子节点
+            return;
+          }
+          //根据当前节点是否有children来判断是展开还是收缩，true收缩，false展开
+          //tree会根据节点内是否有children来向下扩展
+          console.log('before update')
+          console.log(d.children)
+          console.log('updated')
+          d.children = d.children ? null : d._children;
+          console.log(d.children)
+          console.log(d)
+          return;
+          render(data, direction);
+      }
+
+     
+        function drawLine(){
+          g.selectAll("path")
+          .data(root.links())
+          .join("path")
+          .transition()
+          .duration(1000)
+          .attr("fill", "none")
+          .attr("stroke", "black")
+          .attr("stroke-width", 1.5)
+          .attr('d',diagonal)
+        }
+
+        function diagonal({source, target}) {
+          let s = source, d = target;
+          return `M ${s.y} ${s.x}
+                  L ${(s.y + d.y) / 2} ${s.x},
+                  L ${(s.y + d.y) / 2} ${d.x},
+                  ${d.y} ${d.x}`
+        }
+     }
+/*
+
+docker run --name nginx1 --network=host -v ~/web_front_hjx/nginx.conf:/etc/nginx/conf.d/default.conf -d nginx:1.19.1
+
+docker run --name nginx1 --network=host 
+-v ~/web_front_hjx/nginx.conf:/etc/nginx/conf.d/default.conf 
+-v ~/web_front_hjx/:/usr/share/nginx/html -d nginx:1.19.1
+
+
+
+docker run --name nginx1 --network=host 
+-v ~/web_front_hjx/:/usr/share/nginx/html -d nginx:1.19.1
+
+
+docker run -d -p 80:80 --name nginx-web 
+-v /web_front_hjx/nginx/www/app1:/usr/share/nginx/html/app1 
+-v /web_front_hjx/nginx/conf/nginx.conf:/etc/nginx/conf.d/default.conf nginx:1.19.1
+
+
+docker run --name nginx1 --network=host -v ~/web_front_hjx/nginx/conf/nginx.conf:/etc/nginx/conf.d/default.conf -v ~/web_front_hjx/nginx/www/app1:/usr/share/nginx/html/app1 -d nginx:1.19.1
+
+*/
+  
+  </script>
+</body>
+</html>

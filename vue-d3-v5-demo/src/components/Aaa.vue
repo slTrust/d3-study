@@ -4,8 +4,7 @@
   </div>
 </template>
 <script>
-  // https://blog.csdn.net/qq_38192105/article/details/109291178
-  import {treeData} from '../d.js';//数据源
+  import {treeData} from '../d_test.js';//数据源
   export default {
     data() {
       return {
@@ -26,37 +25,25 @@
         circleR: 5,//圆圈半径
       }
     },
-    computed: {
-      treeMap() {//树布局
-        return d3.tree().nodeSize(this.nodeSize).separation((a, b) => {
-          let result = a.parent === b.parent && !a.children && !b.children ? 1 : 2;
-          if (result > 1) {
-            let length = 0;
-            length = a.children ? (length + a.children.length) : length;
-            length = b.children ? (length + b.children.length) : length;
-            result = length / 2 + 0.5;
-          }
-          return result;
-        });
-      },
-    },
     mounted() {
       this.treeInit();
     },
     methods: {
-      //随机数，用于绑定id
-      uuid() {
-        function s4() {
-          return Math.floor((1 + Math.random()) * 0x10000)
-            .toString(16)
-            .substring(1)
-        }
-
-        return (
-          s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4()
-        )
+      // 定义分布排列
+      treeMap() {//树布局
+        return d3.tree()
+            .nodeSize([30, 100])
+            .separation((a, b) => {
+              let result = a.parent === b.parent && !a.children && !b.children ? 1 : 2;
+              if (result > 1) {
+                let length = 0;
+                length = a.children ? (length + a.children.length) : length;
+                length = b.children ? (length + b.children.length) : length;
+                result = length / 2 + 0.5;
+              }
+              return result;
+            });
       },
-
       //初始化
       treeInit() {
         const margin = {top: 0, right: 0, bottom: 0, left: 0};
@@ -67,6 +54,7 @@
 
         // x 从上到下 ， y 从左到右
         this.centralPoint = [centralX, centralY];//中心点坐标
+        console.log( 'centralPoint: [x,y]')
         console.log( this.centralPoint)
         //根节点字符所占宽度
         this.rootNodeLength = this.rootName[0].length * this.fontSize + 30;
@@ -85,24 +73,15 @@
           .attr('transform', `translate(${margin.left},${margin.top}) scale(1)`);
         //画出根节点
         this.drawRoot();
-
-        //指定缩放范围
-        const zoom = d3.zoom().scaleExtent(this.scaleRange).on('zoom', this.zoomFn);
-        //动画持续时间
-        this.container.transition().duration(this.duration).call(zoom.transform, d3.zoomIdentity);
-        svg.call(zoom);
         //数据处理
         this.dealData();
       },
-      //初始化缩放方法
-      zoomFn() {
-        const zoom = d3.event.transform;
-        return this.container.attr('transform', zoom);
-      },
+
       //数据处理
       dealData() {
+        // for循环 遍历左右两棵树
         this.direction.forEach(item => {
-          this.root[item] = d3.hierarchy(treeData[item]);
+          this.root[item] = d3.hierarchy(treeData[item]); // 层级化 l ,r 两棵树
           this.root[item].x0 = this.centralPoint[0];//根节点x坐标
           this.root[item].y0 = this.centralPoint[1];//根节点Y坐标
           this.root[item].descendants().forEach(d => {
@@ -135,22 +114,21 @@
           //修改rootTitle rect 的高度
           d3.select('#rootTitle rect').attr('height', lineHeight).attr('y', -lineHeight / 2);
         });
-
-
       },
       //开始绘图
       update(source, direction) {
         const dirRight = direction === 'r' ? 1 : -1;//方向为右/左
-        const className = `${direction}gNode`;
-        const tree = this.treeMap(this.root[direction]);
-        const nodes = tree.descendants();//返回后代节点数组，第一个节点为自身，然后依次为所有子节点的拓扑排序
-        const links = tree.links();//返回当前 node 的 links 数组, 其中每个 link 定义了 source父节点, target 子节点属性。
+        const className = `${direction}gNode`; // 定义class 方便后续 操作 l / r 树
+        let root = this.root[direction];
+        let tree = this.treeMap()(root); // 传递root 节点进行分布排列
+        const nodes = tree.descendants(); //返回后代节点数组，第一个节点为自身，然后依次为所有子节点的拓扑排序
+        const links = tree.links(nodes);//返回当前 node 的 links 数组, 其中每个 link 定义了 source父节点, target 子节点属性。
         nodes.forEach(d => {
           //左右2部分，设置以中心点为圆点(默认左上角为远点)
-          d.y = dirRight * (d.y + this.rootNodeLength / 2) + this.centralPoint[1];
-          d.x = d.x + this.centralPoint[0];
+          let [centerX,centerY] = this.centralPoint;
+          d.y = dirRight * (d.y + this.rootNodeLength / 2) + centerY;
+          d.x = d.x + centerX;
         });
-
         //根据class名称获取左或者右的g节点，达到分块更新
         const node = this.container.selectAll(`g.${className}`).data(nodes, d => d.id);
 
@@ -168,13 +146,10 @@
         nodeEnter.each(d => {
           if (d.depth > 0) {//非根节点且无子节点
             this.drawText(`g${d.id}`, dirRight);//画文本
-
             if (d.data.value) {
               this.drawTsText(`g${d.id}`);//画子文本
             }
             this.drawRect(`g${d.id}`, dirRight);//画方框
-            // this.drawFilter(`g${d.id}`);//画阴影
-            // d3.select(`#g${d.id} rect`).attr('stroke-width',15).attr('filter',`url(#fg${d.id})`);//给rect绑定阴影
           }
           if (d.depth > 0 && d._children) {//非根节点且有子节点
             const width = Math.min(d.data.name.length * 14, this.rectMinWidth);
@@ -237,9 +212,7 @@
           d.x0 = d.x;
           d.y0 = d.y;
         });
-
       },
-
       //画连接线
       diagonal({source, target}) {
         let s = source, d = target;
@@ -248,31 +221,36 @@
                 L ${(s.y + d.y) / 2} ${d.x},
                 ${d.y} ${d.x}`
       },
-
+      //点击某个节点
+      clickNode(d, direction) {
+        if (!d._children && !d.children) {//无子节点
+          return;
+        }
+        //根据当前节点是否有children来判断是展开还是收缩，true收缩，false展开
+        //tree会根据节点内是否有children来向下扩展
+        d.children = d.children ? null : d._children;
+        d3.select(`#g${d.id} .node-circle .node-circle-vertical`)
+            .transition().duration(this.duration)
+            .attr('stroke-width', d.children ? 0 : 1);//控制节点伸缩时的标识圆圈
+        // 根据 节点 是否有children 来实现 是否绘制
+        this.update(d, direction);
+      },
       //画文本
       drawText(id, dirRight) {
         dirRight = dirRight > 0;//右为1，左为-1
         return d3.select(`#${id}`).append("text")
-          .attr('y', this.textPadding)
-          .attr("x", d => dirRight ? this.textPadding : -this.textPadding)
-          .attr('text-anchor', dirRight ? 'start' : 'end')
-          .style('font-size', this.fontSize)
-          .text(d => d.data.name);
+            .attr('y', this.textPadding)
+            .attr("x", d => dirRight ? this.textPadding : -this.textPadding)
+            .attr('text-anchor', dirRight ? 'start' : 'end')
+            .style('font-size', this.fontSize)
+            .text(d => d.data.name);
       },
       //画子文本
       drawTsText(id) {
         return d3.select(`#${id} text`).append('tspan')
-          .attr('fill', d => this.getTsTextColor(d.parent.data.name))
-          .text(d => d.data.value)
+            .attr('fill', d => this.getTsTextColor(d.parent.data.name))
+            .text(d => d.data.value)
       },
-
-      //画方框阴影
-      drawFilter(id) {
-        return d3.select(`#${id}`).insert('defs', 'rect').append('filter')
-          .attr('id', `f${id}`).attr('x', 0).attr('y', 0).append('feGaussianBlur')
-          .attr('in', 'SourceGraphic').attr('stdDeviation', '5');
-      },
-
       //画方框
       drawRect(id, dirRight) {
         let realw = document.getElementById(id).getBBox().width + 10;//获取g实际宽度后，设置rect宽度
@@ -285,7 +263,6 @@
           .style('stroke', d => this.getRectStorke(d.parent.data.name))
           .style('fill', "#ffffff");
       },
-
       //画circle
       drawCircle(id) {
         let gMark = d3.select(`#${id}`).append('g')
@@ -306,21 +283,12 @@
           .attr('class', 'node-circle-vertical');
         return gMark
       },
-
-      //点击某个节点
-      clickNode(d, direction) {
-        if (!d._children && !d.children) {//无子节点
-          return;
-        }
-        //根据当前节点是否有children来判断是展开还是收缩，true收缩，false展开
-        //tree会根据节点内是否有children来向下扩展
-        d.children = d.children ? null : d._children;
-        d3.select(`#g${d.id} .node-circle .node-circle-vertical`)
-          .transition().duration(this.duration)
-          .attr('stroke-width', d.children ? 0 : 1);//控制节点伸缩时的标识圆圈
-        this.update(d, direction);
+      //画方框阴影
+      drawFilter(id) {
+        return d3.select(`#${id}`).insert('defs', 'rect').append('filter')
+            .attr('id', `f${id}`).attr('x', 0).attr('y', 0).append('feGaussianBlur')
+            .attr('in', 'SourceGraphic').attr('stdDeviation', '5');
       },
-
       //子文本颜色配置
       getTsTextColor(name) {
         switch (name) {
@@ -347,20 +315,24 @@
             return 'gray';
         }
       },
-
-
-      //非空或null时返回“”
-      isNull(val) {
-        return val ? val : '';
-      },
+      //随机数，用于绑定id
+      uuid() {
+        function s4() {
+          return Math.floor((1 + Math.random()) * 0x10000)
+              .toString(16)
+              .substring(1)
+        }
+        return (
+            s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4()
+        )
+      }
     }
   }
 </script>
 <style scoped>
-  .seeTree-page {
-    border:1px solid red;
-    width: 100%;
-    height: 100vh;
-    background-color: white;
-  }
+.seeTree-page {
+  border:1px solid red;
+  background-color: white;
+  height: 100vh;
+}
 </style>

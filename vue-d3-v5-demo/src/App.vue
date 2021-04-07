@@ -1,26 +1,23 @@
 <template>
   <div id="app">
-    <Aaa/>
+<!--    <Aaa/>-->
+<!--    <Bbb/>-->
+    <Ccc/>
   </div>
 </template>
 
 <script>
 import Aaa from './components/Aaa.vue'
+import Bbb from './components/Bbb.vue'
+import Ccc from './components/Ccc.vue'
 export default {
   name: 'App',
   components: {
-    Aaa
+    Aaa,Bbb,Ccc
   }
 }
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+*{margin:0;padding:0;box-sizing: border-box;}
 </style>
